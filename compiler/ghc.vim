@@ -55,7 +55,7 @@ endif
 " associate type map updates to changedtick
 if !exists("b:ghc_types")
   let b:ghc_types = {}
-  let b:my_changedtick = b:changedtick
+  let b:my_changedtick = -1
 endif
 
 if exists("g:haskell_functions")
@@ -128,7 +128,7 @@ if has("balloon_eval")
       let [start,symb,qual,unqual] = namsym
       let name  = qual=='' ? unqual : qual.'.'.unqual
       let pname = name " ( symb ? '('.name.')' : name )
-      if b:ghc_types == {} 
+      if b:ghc_types == {} && !GHC_LoadTypes()
         redraw
         echo "no type information (try :GHCReload)"
       elseif (b:my_changedtick != b:changedtick)
@@ -176,7 +176,9 @@ endfunction
 function! GHC_HaveTypes()
   if b:ghc_types == {} && (b:my_changedtick != b:changedtick)
     let b:my_changedtick = b:changedtick
-    return GHC_BrowseAll()
+    if !GHC_LoadTypes()
+      return GHC_BrowseAll()
+    endif
   else
     return 1
   endif
@@ -192,6 +194,32 @@ function! GHC_CountErrors()
   return c
 endfunction
 
+function! SymFileName()
+  return expand("%:h") . '/.' . expand("%:t") . ".sym"
+endfunction
+
+function! GHC_SaveTypes()
+  if exists("g:ghc_symbolcache") && g:ghc_symbolcache==1
+    call writefile(map(items(b:ghc_types), 'join(v:val, "::")'), SymFileName())
+  endif
+endfunction
+
+function! GHC_LoadTypes()
+  if !exists("g:ghc_symbolcache") || g:ghc_symbolcache==0
+    return 0
+  endif
+  let b:ghc_types = {}
+  let symFile = SymFileName()
+  if !filereadable(symFile)
+    return 0
+  endif
+  for line in readfile(symFile)
+    let typeDef = split(line, '::')
+    let b:ghc_types[typeDef[0]] = typeDef[1]
+  endfor
+  return 1
+endfunction
+
 command! GHCReload call GHC_BrowseAll()
 function! GHC_BrowseAll()
   " let imports = haskellmode#GatherImports()
@@ -201,10 +229,12 @@ function! GHC_BrowseAll()
   let current = GHC_NameCurrent()
   let module = current==[] ? 'Main' : current[0]
   if haskellmode#GHC_VersionGE([6,8,1])
-    return GHC_BrowseBangStar(module)
+    let success = GHC_BrowseBangStar(module)
   else
-    return GHC_BrowseMultiple(imports,['*'.module])
+    let success = GHC_BrowseMultiple(imports,['*'.module])
   endif
+  if success | call GHC_SaveTypes() | endif
+  return success 
 endfunction
 
 function! GHC_NameCurrent()
@@ -382,7 +412,14 @@ function! GHC_CompleteImports(findstart, base)
     return res
   endif
 endfunction
-set omnifunc=GHC_CompleteImports
+
+if !exists("g:haskellmode_completion_ghc")
+  let g:haskellmode_completion_ghc = 1
+endif
+
+if g:haskellmode_completion_ghc != 0
+    set omnifunc=GHC_CompleteImports
+endif
 "
 " Vim's default completeopt is menu,preview
 " you probably want at least menu, or you won't see alternatives listed
