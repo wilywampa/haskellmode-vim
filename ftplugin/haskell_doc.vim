@@ -179,9 +179,9 @@ function! DocBrowser(url)
   " start browser to open url, according to specified format
   let url = a:url=~'^\(file://\|http://\)' ? a:url : 'file://'.a:url
   if (exists("g:haddock_browser_nosilent") && g:haddock_browser_nosilent)
-    exe '!'.printf(g:haddock_browser_callformat,g:haddock_browser,escape(url,'#%')) 
+    exe '!'.printf(g:haddock_browser_callformat,g:haddock_browser,"'".escape(url,'#%')."'") 
   else
-    silent exe '!'.printf(g:haddock_browser_callformat,g:haddock_browser,escape(url,'#%')) 
+    silent exe '!'.printf(g:haddock_browser_callformat,g:haddock_browser,"'".escape(url,'#%')."'") 
   endif
   redraw!
 endfunction
