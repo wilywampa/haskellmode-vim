@@ -41,7 +41,9 @@ setlocal errorformat=
                     \%+C\ \ %#%tarning:\ %m,
 
 " oh, wouldn't you guess it - ghc reports (partially) to stderr..
-setlocal shellpipe=2>
+if stridx(&shellpipe, '2>') == -1
+  setlocal shellpipe=2>
+endif
 
 " ------------------------- but ghc can do a lot more for us..
 "
