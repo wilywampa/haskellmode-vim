@@ -105,7 +105,7 @@ function! GHC_ShowType(addTypeDecl)
     for type in split(b:ghc_types[name],' -- ')
       echo pname "::" type
       if a:addTypeDecl
-        call append( line(".")-1, pname . " :: " . type )
+        call append( line(".")-1, pname . " ::" . type )
       endif
     endfor
   endif
