@@ -77,7 +77,7 @@ function! GHC_StaticOptions()
   let b:my_changedtick -=1
 endfunction
 
-map <LocalLeader>T :call GHC_ShowType(1)<cr>
+map <LocalLeader>T :call GHC_ShowType(1)<cr>:silent! call repeat#set("\<LocalLeader>T")<cr>
 map <LocalLeader>t :call GHC_ShowType(0)<cr>
 function! GHC_ShowType(addTypeDecl)
   let namsym   = haskellmode#GetNameSymbol(getline('.'),col('.'),0)
